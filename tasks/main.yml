@@ -1,15 +1,27 @@
 ---
+
 - name: ensure Prometheus exporters directory exist
   file:
-    path: "{{ statsd_exporter_install_dir }}"
+    path: "{{ statsd_exporter_install_dir }}/{{ statsd_exporter_name }}"
     state: directory
+    recurse: yes
 
 - name: unarchive Statsd Exporter
+  become: false
   unarchive:
     remote_src: yes
-    dest: "{{ statsd_exporter_install_dir }}"
+    dest: "/tmp"
     src: "{{ statsd_exporter_url }}"
-    creates: "{{ statsd_exporter_binary }}"
+    creates: "/tmp/{{ statsd_exporter_name }}/statsd_exporter"
+  delegate_to: localhost
+  check_mode: false
+  notify: restart statsd exporter
+
+- name: propagate Statsd Exporter
+  copy:
+    src: "/tmp/{{ statsd_exporter_name }}/statsd_exporter"
+    dest: "{{ statsd_exporter_install_dir }}/{{ statsd_exporter_name }}"
+    mode: 0755
   notify: restart statsd exporter
 
 - name: create symlink to the current release
